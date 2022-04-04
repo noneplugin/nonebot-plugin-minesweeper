@@ -2,8 +2,8 @@ import re
 import shlex
 import asyncio
 from io import BytesIO
-from dataclasses import dataclass
 from asyncio import TimerHandle
+from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Union, Optional, NoReturn
 
 from nonebot.matcher import Matcher
@@ -49,8 +49,8 @@ parser.add_argument("-n", "--num", type=int, help="雷数")
 parser.add_argument("-s", "--skin", default="winxp", help="皮肤")
 parser.add_argument("--show", action="store_true", help="显示游戏盘")
 parser.add_argument("--stop", action="store_true", help="结束游戏")
-parser.add_argument("--open", nargs="*", help="挖开方块")
-parser.add_argument("--mark", nargs="*", help="标记方块")
+parser.add_argument("--open", nargs="*", default=[], help="挖开方块")
+parser.add_argument("--mark", nargs="*", default=[], help="标记方块")
 
 
 @dataclass
@@ -61,8 +61,8 @@ class Options:
     skin: str = ""
     show: bool = False
     stop: bool = False
-    open: List[str] = []
-    mark: List[str] = []
+    open: List[str] = field(default_factory=list)
+    mark: List[str] = field(default_factory=list)
 
 
 games: Dict[str, MineSweeper] = {}
@@ -120,7 +120,7 @@ async def stop_game(matcher: Matcher, cid: str):
         await matcher.finish("扫雷超时，游戏结束")
 
 
-def set_timeout(matcher: Matcher, cid: str, timeout: float = 600):
+def set_timeout(matcher: Matcher, cid: str, timeout: float = 999):
     timer = timers.get(cid, None)
     if timer:
         timer.cancel()
@@ -179,7 +179,7 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
         await send(help_msg, game.draw())
 
     if options.stop:
-        game = games.pop(cid)
+        games.pop(cid)
         await send("游戏已结束")
 
     game = games[cid]
@@ -207,6 +207,7 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
                 msg = "恭喜你获得游戏胜利！"
             elif game.state == GameState.FAIL:
                 msg = "很遗憾，游戏失败"
+            games.pop(cid)
             await send(msg, image=game.draw())
 
     for position in open_positions:
@@ -222,3 +223,5 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
         if res:
             await send(res)
         await check_result()
+
+    await send(image=game.draw())
