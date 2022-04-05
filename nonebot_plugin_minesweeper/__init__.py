@@ -4,13 +4,13 @@ import asyncio
 from io import BytesIO
 from asyncio import TimerHandle
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Union, Optional, NoReturn
+from typing import Dict, List, Tuple, Optional, NoReturn
 
 from nonebot.matcher import Matcher
 from nonebot.exception import ParserExit
-from nonebot.rule import to_me, ArgumentParser
+from nonebot.rule import ArgumentParser
 from nonebot import on_command, on_shell_command
-from nonebot.params import ShellCommandArgv, CommandArg
+from nonebot.params import ShellCommandArgv, Command, RawCommand, CommandArg
 from nonebot.adapters.onebot.v11 import (
     MessageEvent,
     GroupMessageEvent,
@@ -18,20 +18,22 @@ from nonebot.adapters.onebot.v11 import (
     MessageSegment,
 )
 
-from .data_source import MineSweeper, GameState
+from .data_source import MineSweeper, GameState, OpenResult, MarkResult
 from .utils import skin_list
 
 
 __help__plugin_name__ = "minesweeper"
 __des__ = "扫雷游戏"
 __cmd__ = f"""
-@我 + “扫雷”开始游戏；
+@我 + 扫雷 开始游戏；
 @我 + 扫雷初级 / 扫雷中级 / 扫雷高级 可开始不同难度的游戏；
 可使用 -r/--row ROW 、-c/--col COL 、-n/--num NUM 自定义行列数和雷数；
 可使用 -s/--skin SKIN 指定皮肤，默认为 winxp；
-使用 “挖开”+位置 来挖开方块，可同时指定多个位置；
-使用 “标记”+位置 来标记方块，可同时指定多个位置；
-位置为 字母+数字 的组合，如“A1”
+使用 挖开/open + 位置 来挖开方块，可同时指定多个位置；
+使用 标记/mark + 位置 来标记方块，可同时指定多个位置；
+位置为 字母+数字 的组合，如“A1”；
+发送 查看游戏 查看当前游戏状态；
+发送 结束 结束游戏；
 """.strip()
 __short_cmd__ = "@我 扫雷"
 __example__ = """
@@ -91,6 +93,13 @@ def game_running(event: MessageEvent) -> bool:
     return bool(games.get(cid, None))
 
 
+# 命令前缀为空是需要to_me，否则不需要
+def smart_to_me(
+    event: MessageEvent, cmd: Tuple[str, ...] = Command(), raw_cmd: str = RawCommand()
+) -> bool:
+    return not raw_cmd.startswith(cmd[0]) or event.is_tome()
+
+
 def shortcut(cmd: str, argv: List[str] = [], **kwargs):
     command = on_command(cmd, **kwargs, block=True, priority=12)
 
@@ -103,10 +112,10 @@ def shortcut(cmd: str, argv: List[str] = [], **kwargs):
         await handle_minesweeper(matcher, event, argv + args)
 
 
-shortcut("扫雷", ["--row", "8", "--col", "8", "--num", "10"], rule=to_me())
-shortcut("扫雷初级", ["--row", "8", "--col", "8", "--num", "10"], rule=to_me())
-shortcut("扫雷中级", ["--row", "16", "--col", "16", "--num", "40"], rule=to_me())
-shortcut("扫雷高级", ["--row", "16", "--col", "30", "--num", "99"], rule=to_me())
+shortcut("扫雷", ["--row", "8", "--col", "8", "--num", "10"], rule=smart_to_me)
+shortcut("扫雷初级", ["--row", "8", "--col", "8", "--num", "10"], rule=smart_to_me)
+shortcut("扫雷中级", ["--row", "16", "--col", "16", "--num", "40"], rule=smart_to_me)
+shortcut("扫雷高级", ["--row", "16", "--col", "30", "--num", "99"], rule=smart_to_me)
 shortcut("挖开", ["--open"], aliases={"open"}, rule=game_running)
 shortcut("标记", ["--mark"], aliases={"mark"}, rule=game_running)
 shortcut("查看游戏", ["--show"], aliases={"查看游戏盘", "显示游戏", "显示游戏盘"}, rule=game_running)
@@ -192,16 +201,21 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
     if not (open_positions or mark_positions):
         await send(help_msg)
 
-    async def check_position(position: str) -> Union[Tuple[int, int], NoReturn]:
+    def check_position(position: str) -> Optional[Tuple[int, int]]:
         match_obj = re.match(r"^([a-z])(\d+)$", position, re.IGNORECASE)
-        if not match_obj:
-            await send("请发送 字母+数字 组成的位置，如“A1”")
-        x = (ord(match_obj.group(1).lower()) - ord("a")) % 32
-        y = int(match_obj.group(2)) - 1
-        return x, y
+        if match_obj:
+            x = (ord(match_obj.group(1).lower()) - ord("a")) % 32
+            y = int(match_obj.group(2)) - 1
+            return x, y
 
-    async def check_result():
-        if game.end:
+    msgs = []
+    for position in open_positions:
+        pos = check_position(position)
+        if not pos:
+            msgs.append(f"位置 {position} 不合法，须为 字母+数字 的组合")
+            continue
+        res = game.open(pos[0], pos[1])
+        if res in [OpenResult.WIN, OpenResult.FAIL]:
             msg = ""
             if game.state == GameState.WIN:
                 msg = "恭喜你获得游戏胜利！"
@@ -209,19 +223,20 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
                 msg = "很遗憾，游戏失败"
             games.pop(cid)
             await send(msg, image=game.draw())
-
-    for position in open_positions:
-        x, y = await check_position(position)
-        res = game.open(x, y)
-        if res:
-            await send(res)
-        await check_result()
+        elif res == OpenResult.OUT:
+            msgs.append(f"位置 {position} 超出边界")
+        elif res == OpenResult.DUP:
+            msgs.append(f"位置 {position} 已经被挖过了")
 
     for position in mark_positions:
-        x, y = await check_position(position)
-        res = game.mark(x, y)
-        if res:
-            await send(res)
-        await check_result()
+        pos = check_position(position)
+        if not pos:
+            msgs.append(f"位置 {position} 不合法，须为 字母+数字 的组合")
+            continue
+        res = game.mark(pos[0], pos[1])
+        if res == MarkResult.OUT:
+            msgs.append(f"位置 {position} 超出边界")
+        elif res == MarkResult.OPENED:
+            msgs.append(f"位置 {position} 已经被挖开了，不能标记")
 
-    await send(image=game.draw())
+    await send("\n".join(msgs), image=game.draw())

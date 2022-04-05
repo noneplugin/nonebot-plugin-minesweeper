@@ -26,13 +26,17 @@ pip install nonebot_plugin_minesweeper
 @机器人 + 扫雷 / 扫雷初级 / 扫雷中级 / 扫雷高级
 ```
 
+*注：若命令前缀为空则需要 @机器人，否则可不@*
+
 可使用 -r/--row ROW 、-c/--col COL 、-n/--num NUM 自定义行列数和雷数；
 
 可使用 -s/--skin SKIN 指定皮肤，默认为 winxp；
 
-使用 “挖开”+位置 来挖开方块，可同时指定多个位置；
+当前支持的皮肤：narkomania, mine, ocean, scratch, predator, clone, winxp, hibbeler, symbol, pacman, win98, winbw, maviz, colorsonly, icicle, mario, unknown, vista
 
-使用 “标记”+位置 来标记方块，可同时指定多个位置；
+使用 挖开/open + 位置 来挖开方块，可同时指定多个位置；
+
+使用 标记/mark + 位置 来标记方块，可同时指定多个位置；
 
 位置为 字母+数字 的组合，如“A1”
 

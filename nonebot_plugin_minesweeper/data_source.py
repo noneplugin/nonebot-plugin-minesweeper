@@ -11,9 +11,22 @@ from .utils import load_skin, load_font, save_png
 
 
 class GameState(Enum):
-    GAMING = 0
-    WIN = 1
-    FAIL = 2
+    PREPARE = 0
+    GAMING = 1
+    WIN = 2
+    FAIL = 3
+
+
+class OpenResult(Enum):
+    OUT = 0
+    DUP = 1
+    WIN = 2
+    FAIL = 3
+
+
+class MarkResult(Enum):
+    OUT = 0
+    OPENED = 1
 
 
 @dataclass
@@ -31,22 +44,8 @@ class MineSweeper:
         self.column = column
         self.mine_num = mine_num  # 地雷数
         self.start_time = time.time()  # 游戏开始时间
-        self.state: GameState = GameState.GAMING  # 游戏状态
+        self.state: GameState = GameState.PREPARE  # 游戏状态
         self.tiles = [[Tile() for _ in range(column)] for _ in range(row)]
-
-        # 设置地雷
-        count = 0
-        while count < mine_num:
-            i = random.randint(0, self.row - 1)
-            j = random.randint(0, self.column - 1)
-            if self.tiles[i][j].is_mine:
-                continue
-            self.tiles[i][j].is_mine = True
-            count += 1
-
-        for i in range(row):
-            for j in range(column):
-                self.tiles[i][j].count = self.count_around(i, j)
 
         self.skin = load_skin(row, column, skin_name)  # 皮肤
         self.scale: int = 4  # 缩放倍数
@@ -54,9 +53,23 @@ class MineSweeper:
         self.padding = 50  # 图片边距，用于添加序号
         self.bg = self.draw_bg()  # 添加好序号的图片
 
-    @property
-    def end(self) -> bool:
-        return self.state in [GameState.WIN, GameState.FAIL]
+    def set_mines(self):
+        # 设置地雷
+        count = 0
+        while count < self.mine_num:
+            i = random.randint(0, self.row - 1)
+            j = random.randint(0, self.column - 1)
+            tile = self.tiles[i][j]
+            if tile.is_mine or tile.is_open:
+                continue
+            tile.is_mine = True
+            count += 1
+
+        # 计算数字
+        for i in range(self.row):
+            for j in range(self.column):
+                self.tiles[i][j].count = self.count_around(i, j)
+        self.state = GameState.GAMING
 
     def draw_bg(self) -> IMG:
         w = self.skin.background.width * self.scale + self.padding
@@ -148,34 +161,46 @@ class MineSweeper:
                 y = 55 + img.height * i
                 bg.paste(img, (x, y))
 
-    def open(self, x: int, y: int) -> Optional[str]:
+    def open(self, x: int, y: int) -> Optional[OpenResult]:
         if not self.is_valid(x, y):
-            return "位置超出边界"
+            return OpenResult.OUT
+
         tile = self.tiles[x][y]
         if tile.is_open:
-            return "这里已经被挖过了"
+            return OpenResult.DUP
+
+        tile.is_open = True
+        if self.state == GameState.PREPARE:
+            self.set_mines()
+
         if tile.is_mine:
             self.state = GameState.FAIL
             tile.boom = True
-            for t in self.all_tiles():
-                if (t.is_mine and not t.marked) or (not t.is_mine and t.marked):
-                    t.is_open = True
-            return
-        tile.is_open = True
+            self.show_mines()
+            return OpenResult.FAIL
+
         if tile.count == 0:
             for dx, dy in self.neighbors():
                 self.spread_around(x + dx, y + dy)
+
         open_num = len([tile for tile in self.all_tiles() if tile.is_open])
         if open_num + self.mine_num >= self.row * self.column:
             self.state = GameState.WIN
+            self.show_mines()
+            return OpenResult.WIN
 
-    def mark(self, x: int, y: int) -> Optional[str]:
+    def mark(self, x: int, y: int) -> Optional[MarkResult]:
         if not self.is_valid(x, y):
-            return "位置超出边界"
+            return MarkResult.OUT
         tile = self.tiles[x][y]
         if tile.is_open:
-            return "不能标记已经挖开的地方"
+            return MarkResult.OPENED
         tile.marked = not tile.marked
+
+    def show_mines(self):
+        for t in self.all_tiles():
+            if (t.is_mine and not t.marked) or (not t.is_mine and t.marked):
+                t.is_open = True
 
     def is_valid(self, x: int, y: int) -> bool:
         return 0 <= x < self.row and 0 <= y < self.column
