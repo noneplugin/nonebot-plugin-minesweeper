@@ -45,9 +45,9 @@ __usage__ = f"{__des__}\n\nUsage:\n{__cmd__}\n\nExample:\n{__example__}"
 
 
 parser = ArgumentParser("minesweeper", description="扫雷")
-parser.add_argument("-r", "--row", type=int, help="行数")
-parser.add_argument("-c", "--col", type=int, help="列数")
-parser.add_argument("-n", "--num", type=int, help="雷数")
+parser.add_argument("-r", "--row", type=int, default=8, help="行数")
+parser.add_argument("-c", "--col", type=int, default=8, help="列数")
+parser.add_argument("-n", "--num", type=int, default=10, help="雷数")
 parser.add_argument("-s", "--skin", default="winxp", help="皮肤")
 parser.add_argument("--show", action="store_true", help="显示游戏盘")
 parser.add_argument("--stop", action="store_true", help="结束游戏")
@@ -92,14 +92,8 @@ def game_running(event: MessageEvent) -> bool:
     cid = get_cid(event)
     return bool(games.get(cid, None))
 
-def set_default(arg, default):
-    # 若参数为空，则设置默认值
-    if arg is None:
-        return default
-    return arg
 
-
-# 命令前缀为空是需要to_me，否则不需要
+# 命令前缀为空则需要to_me，否则不需要
 def smart_to_me(
     event: MessageEvent, cmd: Tuple[str, ...] = Command(), raw_cmd: str = RawCommand()
 ) -> bool:
@@ -174,11 +168,6 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
     if not games.get(cid, None):
         if options.open or options.mark or options.show or options.stop:
             await send("没有正在进行的游戏")
-
-        options.row = set_default(options.row, 8)
-        options.col = set_default(options.col, 8)
-        options.num = set_default(options.num, 10)
-        options.skin = set_default(options.skin, "winxp")
 
         if options.row < 8 or options.row > 24:
             await send("行数应在8~24之间")
