@@ -92,6 +92,12 @@ def game_running(event: MessageEvent) -> bool:
     cid = get_cid(event)
     return bool(games.get(cid, None))
 
+def set_default(arg, default):
+    # 若参数为空，则设置默认值
+    if arg is None:
+        return default
+    return arg
+
 
 # 命令前缀为空是需要to_me，否则不需要
 def smart_to_me(
@@ -168,6 +174,11 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
     if not games.get(cid, None):
         if options.open or options.mark or options.show or options.stop:
             await send("没有正在进行的游戏")
+
+        options.row = set_default(options.row, 8)
+        options.col = set_default(options.col, 8)
+        options.num = set_default(options.num, 10)
+        options.skin = set_default(options.skin, "winxp")
 
         if options.row < 8 or options.row > 24:
             await send("行数应在8~24之间")
