@@ -129,7 +129,7 @@ async def stop_game(matcher: Matcher, cid: str):
         await matcher.finish("扫雷超时，游戏结束")
 
 
-def set_timeout(matcher: Matcher, cid: str, timeout: float = 999):
+def set_timeout(matcher: Matcher, cid: str, timeout: float = 300):
     timer = timers.get(cid, None)
     if timer:
         timer.cancel()
@@ -192,6 +192,7 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
         await send("游戏已结束")
 
     game = games[cid]
+    set_timeout(matcher, cid)
 
     if options.show:
         await send(image=game.draw())

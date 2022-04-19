@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nonebot_plugin_minesweeper"
-version = "0.1.2"
+version = "0.1.3"
 description = "Nonebot2 扫雷插件"
 authors = ["meetwq <meetwq@gmail.com>"]
 license = "MIT"
