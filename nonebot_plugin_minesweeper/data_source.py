@@ -27,6 +27,7 @@ class OpenResult(Enum):
 class MarkResult(Enum):
     OUT = 0
     OPENED = 1
+    WIN = 2
 
 
 @dataclass
@@ -196,6 +197,14 @@ class MineSweeper:
         if tile.is_open:
             return MarkResult.OPENED
         tile.marked = not tile.marked
+
+        mark_tiles = [tile for tile in self.all_tiles() if tile.marked]
+        if len(mark_tiles) == self.mine_num and all(
+            [tile.is_mine for tile in mark_tiles]
+        ):
+            self.state = GameState.WIN
+            self.show_mines()
+            return MarkResult.WIN
 
     def show_mines(self):
         for t in self.all_tiles():

@@ -235,7 +235,10 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
             msgs.append(f"位置 {position} 不合法，须为 字母+数字 的组合")
             continue
         res = game.mark(pos[0], pos[1])
-        if res == MarkResult.OUT:
+        if res == MarkResult.WIN:
+            games.pop(cid)
+            await send("恭喜你获得游戏胜利！", image=game.draw())
+        elif res == MarkResult.OUT:
             msgs.append(f"位置 {position} 超出边界")
         elif res == MarkResult.OPENED:
             msgs.append(f"位置 {position} 已经被挖开了，不能标记")
