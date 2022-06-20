@@ -7,8 +7,9 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Optional, NoReturn
 
 from nonebot.matcher import Matcher
-from nonebot.exception import ParserExit
 from nonebot.rule import ArgumentParser
+from nonebot.exception import ParserExit
+from nonebot.plugin import PluginMetadata
 from nonebot import on_command, on_shell_command
 from nonebot.params import ShellCommandArgv, Command, RawCommand, CommandArg
 from nonebot.adapters.onebot.v11 import (
@@ -21,27 +22,27 @@ from nonebot.adapters.onebot.v11 import (
 from .data_source import MineSweeper, GameState, OpenResult, MarkResult
 from .utils import skin_list
 
-
-__help__plugin_name__ = "minesweeper"
-__des__ = "扫雷游戏"
-__cmd__ = f"""
-@我 + 扫雷 开始游戏；
-@我 + 扫雷初级 / 扫雷中级 / 扫雷高级 可开始不同难度的游戏；
-可使用 -r/--row ROW 、-c/--col COL 、-n/--num NUM 自定义行列数和雷数；
-可使用 -s/--skin SKIN 指定皮肤，默认为 winxp；
-使用 挖开/open + 位置 来挖开方块，可同时指定多个位置；
-使用 标记/mark + 位置 来标记方块，可同时指定多个位置；
-位置为 字母+数字 的组合，如“A1”；
-发送 查看游戏 查看当前游戏状态；
-发送 结束 结束游戏；
-""".strip()
-__short_cmd__ = "@我 扫雷"
-__example__ = """
-@小Q 扫雷
-挖开 A1
-标记 B2 C3
-""".strip()
-__usage__ = f"{__des__}\n\nUsage:\n{__cmd__}\n\nExample:\n{__example__}"
+__plugin_meta__ = PluginMetadata(
+    name="扫雷",
+    description="扫雷游戏",
+    usage=(
+        "@我 + 扫雷 开始游戏；"
+        "@我 + 扫雷初级 / 扫雷中级 / 扫雷高级 可开始不同难度的游戏；"
+        "可使用 -r/--row ROW 、-c/--col COL 、-n/--num NUM 自定义行列数和雷数；"
+        "可使用 -s/--skin SKIN 指定皮肤，默认为 winxp；"
+        "使用 挖开/open + 位置 来挖开方块，可同时指定多个位置；"
+        "使用 标记/mark + 位置 来标记方块，可同时指定多个位置；"
+        "位置为 字母+数字 的组合，如“A1”；"
+        "发送 查看游戏 查看当前游戏状态；"
+        "发送 结束 结束游戏；"
+    ),
+    extra={
+        "unique_name": "minesweeper",
+        "example": "@小Q 扫雷\n挖开 A1\n标记 B2 C3",
+        "author": "meetwq <meetwq@gmail.com>",
+        "version": "0.1.5",
+    },
+)
 
 
 parser = ArgumentParser("minesweeper", description="扫雷")
@@ -157,7 +158,7 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
         args = parser.parse_args(argv)
     except ParserExit as e:
         if e.status == 0:
-            await send(__usage__)
+            await send(__plugin_meta__.usage)
         await send()
 
     help_msg = "使用 “挖开”+位置 挖开方块，使用 “标记”+位置 标记方块，可同时加多个位置，如：“挖开 A1 B2”"
