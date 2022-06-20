@@ -26,21 +26,21 @@ __plugin_meta__ = PluginMetadata(
     name="扫雷",
     description="扫雷游戏",
     usage=(
-        "@我 + 扫雷 开始游戏；"
-        "@我 + 扫雷初级 / 扫雷中级 / 扫雷高级 可开始不同难度的游戏；"
-        "可使用 -r/--row ROW 、-c/--col COL 、-n/--num NUM 自定义行列数和雷数；"
-        "可使用 -s/--skin SKIN 指定皮肤，默认为 winxp；"
-        "使用 挖开/open + 位置 来挖开方块，可同时指定多个位置；"
-        "使用 标记/mark + 位置 来标记方块，可同时指定多个位置；"
-        "位置为 字母+数字 的组合，如“A1”；"
-        "发送 查看游戏 查看当前游戏状态；"
+        "@我 + 扫雷 开始游戏；\n"
+        "@我 + 扫雷初级 / 扫雷中级 / 扫雷高级 可开始不同难度的游戏；\n"
+        "可使用 -r/--row ROW 、-c/--col COL 、-n/--num NUM 自定义行列数和雷数；\n"
+        "可使用 -s/--skin SKIN 指定皮肤，默认为 winxp；\n"
+        "使用 挖开/open + 位置 来挖开方块，可同时指定多个位置；\n"
+        "使用 标记/mark + 位置 来标记方块，可同时指定多个位置；\n"
+        "位置为 字母+数字 的组合，如“A1”；\n"
+        "发送 查看游戏 查看当前游戏状态；\n"
         "发送 结束 结束游戏；"
     ),
     extra={
         "unique_name": "minesweeper",
         "example": "@小Q 扫雷\n挖开 A1\n标记 B2 C3",
         "author": "meetwq <meetwq@gmail.com>",
-        "version": "0.1.5",
+        "version": "0.1.6",
     },
 )
 
