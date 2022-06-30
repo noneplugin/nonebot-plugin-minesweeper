@@ -34,7 +34,8 @@ __plugin_meta__ = PluginMetadata(
         "使用 标记/mark + 位置 来标记方块，可同时指定多个位置；\n"
         "位置为 字母+数字 的组合，如“A1”；\n"
         "发送 查看游戏 查看当前游戏状态；\n"
-        "发送 结束 结束游戏；"
+        "发送 结束 结束游戏；\n"
+        "发送 添加人员 可以添加人员到游戏内，只能当前局内能进行游戏的人来进行添加；"
     ),
     extra={
         "unique_name": "minesweeper",
@@ -54,6 +55,7 @@ parser.add_argument("--show", action="store_true", help="显示游戏盘")
 parser.add_argument("--stop", action="store_true", help="结束游戏")
 parser.add_argument("--open", nargs="*", default=[], help="挖开方块")
 parser.add_argument("--mark", nargs="*", default=[], help="标记方块")
+parser.add_argument("--addper", nargs="*", default=[], help="添加游戏人员")
 
 
 @dataclass
@@ -66,6 +68,7 @@ class Options:
     stop: bool = False
     open: List[str] = field(default_factory=list)
     mark: List[str] = field(default_factory=list)
+    addper: List[str] = field(default_factory=list)
 
 
 games: Dict[str, MineSweeper] = {}
@@ -107,7 +110,16 @@ def shortcut(cmd: str, argv: List[str] = [], **kwargs):
     @command.handle()
     async def _(matcher: Matcher, event: MessageEvent, msg: Message = CommandArg()):
         try:
-            args = shlex.split(msg.extract_plain_text().strip())
+            if argv[0] != "--addper":
+                args = shlex.split(msg.extract_plain_text().strip())
+            else:
+                temp_at = list()
+                for i in msg:
+                    try:
+                        temp_at.append(i.data['qq'])
+                    except:
+                        pass
+                args = temp_at
         except:
             args = []
         await handle_minesweeper(matcher, event, argv + args)
@@ -117,10 +129,11 @@ shortcut("扫雷", ["--row", "8", "--col", "8", "--num", "10"], rule=smart_to_me
 shortcut("扫雷初级", ["--row", "8", "--col", "8", "--num", "10"], rule=smart_to_me)
 shortcut("扫雷中级", ["--row", "16", "--col", "16", "--num", "40"], rule=smart_to_me)
 shortcut("扫雷高级", ["--row", "16", "--col", "30", "--num", "99"], rule=smart_to_me)
-shortcut("挖开", ["--open"], aliases={"open"}, rule=game_running)
-shortcut("标记", ["--mark"], aliases={"mark"}, rule=game_running)
+shortcut("挖开", ["--open"], aliases={"open", 'wk'}, rule=game_running)
+shortcut("标记", ["--mark"], aliases={"mark", 'bj'}, rule=game_running)
 shortcut("查看游戏", ["--show"], aliases={"查看游戏盘", "显示游戏", "显示游戏盘"}, rule=game_running)
 shortcut("结束", ["--stop"], aliases={"停", "停止游戏", "结束游戏"}, rule=game_running)
+shortcut("添加人员", ["--addper"], rule=game_running)
 
 
 async def stop_game(matcher: Matcher, cid: str):
@@ -184,6 +197,8 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
 
         game = MineSweeper(options.row, options.col, options.num, options.skin)
         games[cid] = game
+        games[cid].owner=list()
+        games[cid].owner.append(event.user_id)
         set_timeout(matcher, cid)
 
         await send(help_msg, game.draw())
@@ -195,8 +210,19 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
     game = games[cid]
     set_timeout(matcher, cid)
 
+    if event.user_id not in game.owner:
+        await send("你不在游戏白名单里面")
+
     if options.show:
         await send(image=game.draw())
+
+    if options.addper:
+        if event.user_id in game.owner:
+            for i in options.addper:
+                game.owner.append(int(i))
+            await send('添加成功')
+        else:
+            await send('你不在白名单里面，不能添加')
 
     open_positions = options.open
     mark_positions = options.mark
