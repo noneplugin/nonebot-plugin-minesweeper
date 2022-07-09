@@ -40,6 +40,7 @@ pip install nonebot_plugin_minesweeper
 
 位置为 字母+数字 的组合，如“A1”
 
+使用 添加人员 可以添加人员到游戏内，只能当前局内能进行游戏的人来进行添加
 
 或使用 `minesweeper` 指令：
 

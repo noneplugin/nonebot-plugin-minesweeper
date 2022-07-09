@@ -37,9 +37,12 @@ class Tile:
     marked: bool = False
     boom: bool = False
     count: int = 0
+    diged: bool = False
 
 
 class MineSweeper:
+    owner = list()
+
     def __init__(self, row: int, column: int, mine_num: int, skin_name: str = "winxp"):
         self.row = row
         self.column = column
@@ -100,6 +103,15 @@ class MineSweeper:
         bg = bg.resize((bg.width * self.scale, bg.height * self.scale), Image.NEAREST)
         img = self.bg
         img.paste(bg, (self.padding, 0))
+        for i in range(self.row):
+            for j in range(self.column):
+                dy = self.skin.numbers[0].height * self.scale
+                y = 220 + dy * i + 20
+                dx = self.skin.numbers[0].width * self.scale
+                x = 105 + dx * j + 10
+                if self.tiles[i][j].is_open == False and self.tiles[i][j].marked == False:
+                    draw = ImageDraw.Draw(img)
+                    draw.text((x, y), chr(i + 65) + str(j + 1), font=load_font("00TT.TTF", 25), fill="black")
         return save_png(img)
 
     def draw_face(self, bg: IMG):
