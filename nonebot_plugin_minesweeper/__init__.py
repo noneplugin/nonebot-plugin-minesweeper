@@ -35,13 +35,12 @@ __plugin_meta__ = PluginMetadata(
         "位置为 字母+数字 的组合，如“A1”；\n"
         "发送 查看游戏 查看当前游戏状态；\n"
         "发送 结束 结束游戏；\n"
-        "发送 添加人员 + qq/@ 可以添加人员到游戏内，只能当前局内能进行游戏的人来进行添加；"
     ),
     extra={
         "unique_name": "minesweeper",
         "example": "@小Q 扫雷\n挖开 A1\n标记 B2 C3",
         "author": "meetwq <meetwq@gmail.com>",
-        "version": "0.1.7",
+        "version": "0.1.8",
     },
 )
 
@@ -55,7 +54,6 @@ parser.add_argument("--show", action="store_true", help="显示游戏盘")
 parser.add_argument("--stop", action="store_true", help="结束游戏")
 parser.add_argument("--open", nargs="*", default=[], help="挖开方块")
 parser.add_argument("--mark", nargs="*", default=[], help="标记方块")
-parser.add_argument("--add", nargs="*", default=[], help="添加游戏人员")
 
 
 @dataclass
@@ -68,7 +66,6 @@ class Options:
     stop: bool = False
     open: List[str] = field(default_factory=list)
     mark: List[str] = field(default_factory=list)
-    add: List[str] = field(default_factory=list)
 
 
 games: Dict[str, MineSweeper] = {}
@@ -125,27 +122,9 @@ shortcut("标记", ["--mark"], aliases={"mark", "bj"}, rule=game_running)
 shortcut("查看游戏", ["--show"], aliases={"查看游戏盘", "显示游戏", "显示游戏盘"}, rule=game_running)
 shortcut("结束", ["--stop"], aliases={"停", "停止游戏", "结束游戏"}, rule=game_running)
 
-add_player = on_command("添加人员", aliases={"添加玩家"}, rule=game_running)
-
 
 def is_qq(msg: str):
     return msg.isdigit() and 11 >= len(msg) >= 5
-
-
-@add_player.handle()
-async def _(matcher: Matcher, event: MessageEvent, msg: Message = CommandArg()):
-    args = []
-    for seg in msg["at"]:
-        args.append(seg.data["qq"])
-    try:
-        texts = shlex.split(msg.extract_plain_text().strip())
-        for text in texts:
-            if is_qq(text):
-                args.append(text)
-    except:
-        pass
-    if args:
-        await handle_minesweeper(matcher, event, ["--add"] + args)
 
 
 async def stop_game(matcher: Matcher, cid: str):
@@ -209,7 +188,6 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
 
         game = MineSweeper(options.row, options.col, options.num, options.skin)
         games[cid] = game
-        games[cid].players.append(event.user_id)
         set_timeout(matcher, cid)
 
         await send(help_msg, game.draw())
@@ -220,17 +198,9 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
     if options.show:
         await send(image=game.draw())
 
-    if event.user_id not in game.players:
-        await send("你不在本局游戏白名单中")
-
     if options.stop:
         games.pop(cid)
         await send("游戏已结束")
-
-    if options.add:
-        for id in options.add:
-            game.players.append(int(id))
-        await send("添加成功")
 
     open_positions = options.open
     mark_positions = options.mark

@@ -3,7 +3,7 @@ import random
 from enum import Enum
 from io import BytesIO
 from dataclasses import dataclass
-from typing import List, Tuple, Optional, Iterator
+from typing import Tuple, Optional, Iterator
 from PIL import Image, ImageDraw
 from PIL.Image import Image as IMG
 
@@ -47,7 +47,6 @@ class MineSweeper:
         self.start_time = time.time()  # 游戏开始时间
         self.state: GameState = GameState.PREPARE  # 游戏状态
         self.tiles = [[Tile() for _ in range(column)] for _ in range(row)]
-        self.players: List[int] = []  # 游戏参与人员
 
         self.skin = load_skin(row, column, skin_name)  # 皮肤
         self.scale: int = 4  # 缩放倍数
