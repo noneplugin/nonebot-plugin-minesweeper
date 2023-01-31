@@ -4,23 +4,30 @@ import asyncio
 from io import BytesIO
 from asyncio import TimerHandle
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, NoReturn
+from typing import Dict, List, Tuple, Optional, NoReturn, Union
 
 from nonebot.matcher import Matcher
 from nonebot.rule import ArgumentParser
 from nonebot.exception import ParserExit
 from nonebot.plugin import PluginMetadata
 from nonebot import on_command, on_shell_command
-from nonebot.params import ShellCommandArgv, Command, RawCommand, CommandArg
-from nonebot.adapters.onebot.v11 import (
-    MessageEvent,
-    GroupMessageEvent,
-    Message,
-    MessageSegment,
-)
+from nonebot.params import ShellCommandArgv, CommandArg, CommandStart, EventToMe
 
-from .data_source import MineSweeper, GameState, OpenResult, MarkResult
+from nonebot.adapters.onebot.v11 import Bot as V11Bot
+from nonebot.adapters.onebot.v11 import Message as V11Msg
+from nonebot.adapters.onebot.v11 import MessageSegment as V11MsgSeg
+from nonebot.adapters.onebot.v11 import MessageEvent as V11MEvent
+from nonebot.adapters.onebot.v11 import GroupMessageEvent as V11GMEvent
+
+from nonebot.adapters.onebot.v12 import Bot as V12Bot
+from nonebot.adapters.onebot.v12 import Message as V12Msg
+from nonebot.adapters.onebot.v12 import MessageSegment as V12MsgSeg
+from nonebot.adapters.onebot.v12 import MessageEvent as V12MEvent
+from nonebot.adapters.onebot.v12 import GroupMessageEvent as V12GMEvent
+from nonebot.adapters.onebot.v12 import ChannelMessageEvent as V12CMEvent
+
 from .utils import skin_list
+from .data_source import MineSweeper, GameState, OpenResult, MarkResult
 
 __plugin_meta__ = PluginMetadata(
     name="扫雷",
@@ -40,7 +47,7 @@ __plugin_meta__ = PluginMetadata(
         "unique_name": "minesweeper",
         "example": "@小Q 扫雷\n挖开 A1\n标记 B2 C3",
         "author": "meetwq <meetwq@gmail.com>",
-        "version": "0.1.8",
+        "version": "0.2.0",
     },
 )
 
@@ -76,41 +83,57 @@ minesweeper = on_shell_command("minesweeper", parser=parser, block=True, priorit
 
 @minesweeper.handle()
 async def _(
-    matcher: Matcher, event: MessageEvent, argv: List[str] = ShellCommandArgv()
+    bot: Union[V11Bot, V12Bot],
+    matcher: Matcher,
+    event: Union[V11MEvent, V12MEvent],
+    argv: List[str] = ShellCommandArgv(),
 ):
-    await handle_minesweeper(matcher, event, argv)
+    await handle_minesweeper(bot, matcher, event, argv)
 
 
-def get_cid(event: MessageEvent):
-    return (
-        f"group_{event.group_id}"
-        if isinstance(event, GroupMessageEvent)
-        else f"private_{event.user_id}"
-    )
+def get_cid(bot: Union[V11Bot, V12Bot], event: Union[V11MEvent, V12MEvent]):
+    if isinstance(event, V11MEvent):
+        cid = f"{bot.self_id}_{event.sub_type}_"
+    else:
+        cid = f"{bot.self_id}_{event.detail_type}_"
+
+    if isinstance(event, V11GMEvent) or isinstance(event, V12GMEvent):
+        cid += str(event.group_id)
+    elif isinstance(event, V12CMEvent):
+        cid += f"{event.guild_id}_{event.channel_id}"
+    else:
+        cid += str(event.user_id)
+
+    return cid
 
 
-def game_running(event: MessageEvent) -> bool:
-    cid = get_cid(event)
+def game_running(
+    bot: Union[V11Bot, V12Bot], event: Union[V11MEvent, V12MEvent]
+) -> bool:
+    cid = get_cid(bot, event)
     return bool(games.get(cid, None))
 
 
 # 命令前缀为空则需要to_me，否则不需要
-def smart_to_me(
-    event: MessageEvent, cmd: Tuple[str, ...] = Command(), raw_cmd: str = RawCommand()
-) -> bool:
-    return not raw_cmd.startswith(cmd[0]) or event.is_tome()
+def smart_to_me(command_start: str = CommandStart(), to_me: bool = EventToMe()) -> bool:
+    return bool(command_start) or to_me
 
 
 def shortcut(cmd: str, argv: List[str] = [], **kwargs):
     command = on_command(cmd, **kwargs, block=True, priority=12)
 
     @command.handle()
-    async def _(matcher: Matcher, event: MessageEvent, msg: Message = CommandArg()):
+    async def _(
+        bot: Union[V11Bot, V12Bot],
+        matcher: Matcher,
+        event: Union[V11MEvent, V12MEvent],
+        msg: Union[V11Msg, V12Msg] = CommandArg(),
+    ):
         try:
             args = shlex.split(msg.extract_plain_text().strip())
         except:
             args = []
-        await handle_minesweeper(matcher, event, argv + args)
+        await handle_minesweeper(bot, matcher, event, argv + args)
 
 
 shortcut("扫雷", ["--row", "8", "--col", "8", "--num", "10"], rule=smart_to_me)
@@ -145,17 +168,34 @@ def set_timeout(matcher: Matcher, cid: str, timeout: float = 600):
     timers[cid] = timer
 
 
-async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[str]):
+async def handle_minesweeper(
+    bot: Union[V11Bot, V12Bot],
+    matcher: Matcher,
+    event: Union[V11MEvent, V12MEvent],
+    argv: List[str],
+):
     async def send(
         message: Optional[str] = None, image: Optional[BytesIO] = None
     ) -> NoReturn:
         if not (message or image):
             await matcher.finish()
-        msg = Message()
-        if message:
-            msg.append(message)
-        if image:
-            msg.append(MessageSegment.image(image))
+
+        if isinstance(bot, V11Bot):
+            msg = V11Msg()
+            if message:
+                msg.append(message)
+            if image:
+                msg.append(V11MsgSeg.image(image))
+        else:
+            msg = V12Msg()
+            if message:
+                msg.append(message)
+            if image:
+                resp = await bot.upload_file(
+                    type="data", name="minesweeper", data=image.getvalue()
+                )
+                file_id = resp["file_id"]
+                msg.append(V12MsgSeg.image(file_id))
         await matcher.finish(msg)
 
     try:
@@ -169,7 +209,7 @@ async def handle_minesweeper(matcher: Matcher, event: MessageEvent, argv: List[s
 
     options = Options(**vars(args))
 
-    cid = get_cid(event)
+    cid = get_cid(bot, event)
     if not games.get(cid, None):
         if options.open or options.mark or options.show or options.stop:
             await send("没有正在进行的游戏")
