@@ -1,13 +1,14 @@
-import time
 import random
+import time
+from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
-from dataclasses import dataclass
-from typing import Tuple, Optional, Iterator
+from typing import Iterator, Optional, Tuple
+
 from PIL import Image, ImageDraw
 from PIL.Image import Image as IMG
 
-from .utils import load_skin, load_font, save_png
+from .utils import load_font, load_skin, save_png
 
 
 class GameState(Enum):
