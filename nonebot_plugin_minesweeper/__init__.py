@@ -53,7 +53,7 @@ __plugin_meta__ = PluginMetadata(
         "unique_name": "minesweeper",
         "example": "@小Q 扫雷\n挖开 A1\n标记 B2 C3",
         "author": "meetwq <meetwq@gmail.com>",
-        "version": "0.3.0",
+        "version": "0.3.1",
     },
 )
 
