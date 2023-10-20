@@ -152,7 +152,7 @@ class MineSweeper:
                 if tile.is_open or tile.marked:
                     continue
                 text = chr(i + 65) + str(j + 1)
-                text_w, text_h = font.getsize(text)
+                _, _, text_w, text_h = font.getbbox(text)
                 x = dx + tile_w * j + (tile_w - text_w) / 2
                 y = dy + tile_h * i + (tile_h - text_h) / 2
                 draw = ImageDraw.Draw(bg)

@@ -11,23 +11,14 @@ from nonebot.adapters import Bot, Event, Message
 from nonebot.exception import ParserExit
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg, CommandStart, EventToMe, ShellCommandArgv
-from nonebot.plugin import PluginMetadata
+from nonebot.plugin import PluginMetadata, inherit_supported_adapters
 from nonebot.rule import ArgumentParser
 
 require("nonebot_plugin_saa")
 require("nonebot_plugin_session")
 
 from nonebot_plugin_saa import Image, MessageFactory
-from nonebot_plugin_saa import __plugin_meta__ as saa_plugin_meta
-from nonebot_plugin_session import SessionIdType
-from nonebot_plugin_session import __plugin_meta__ as session_plugin_meta
-from nonebot_plugin_session import extract_session
-
-assert saa_plugin_meta.supported_adapters
-assert session_plugin_meta.supported_adapters
-supported_adapters = (
-    saa_plugin_meta.supported_adapters & session_plugin_meta.supported_adapters
-)
+from nonebot_plugin_session import SessionIdType, extract_session
 
 from .data_source import GameState, MarkResult, MineSweeper, OpenResult
 from .utils import skin_list
@@ -48,12 +39,14 @@ __plugin_meta__ = PluginMetadata(
     ),
     type="application",
     homepage="https://github.com/noneplugin/nonebot-plugin-minesweeper",
-    supported_adapters=supported_adapters,
+    supported_adapters=inherit_supported_adapters(
+        "nonebot_plugin_saa", "nonebot_plugin_session"
+    ),
     extra={
         "unique_name": "minesweeper",
         "example": "@小Q 扫雷\n挖开 A1\n标记 B2 C3",
         "author": "meetwq <meetwq@gmail.com>",
-        "version": "0.3.1",
+        "version": "0.3.2",
     },
 )
 
