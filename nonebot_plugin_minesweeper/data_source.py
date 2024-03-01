@@ -94,14 +94,16 @@ class MineSweeper:
 
     def all_tiles(self) -> Iterator[Tile]:
         for row in self.tiles:
-            for tile in row:
-                yield tile
+            yield from row
 
     def draw_counts(self, bg: IMG):
         mark_num = len([tile for tile in self.all_tiles() if tile.marked])
         mine_left = self.mine_num - mark_num
         nums = f"{mine_left:03d}"[:3]
-        to_digit = lambda s: self.skin.digits[10 if s == "-" else int(s)]
+
+        def to_digit(s):
+            return self.skin.digits[10 if s == "-" else int(s)]
+
         digits = [to_digit(s) for s in nums]
         for i in range(3):
             x = 18 + i * (digits[i].width + 2)
@@ -196,7 +198,7 @@ class MineSweeper:
 
         mark_tiles = [tile for tile in self.all_tiles() if tile.marked]
         if len(mark_tiles) == self.mine_num and all(
-            [tile.is_mine for tile in mark_tiles]
+            tile.is_mine for tile in mark_tiles
         ):
             self.state = GameState.WIN
             self.show_mines()
