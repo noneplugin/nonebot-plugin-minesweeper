@@ -219,6 +219,8 @@ async def _(
     open_positions: Query[Tuple[str, ...]] = AlconnaQuery("open_positions", ()),
 ):
     game = games[user_id]
+    set_timeout(matcher, user_id)
+
     msgs = []
     for position in open_positions.result:
         pos = check_position(position)
@@ -252,6 +254,8 @@ async def _(
     mark_positions: Query[Tuple[str, ...]] = AlconnaQuery("mark_positions", ()),
 ):
     game = games[user_id]
+    set_timeout(matcher, user_id)
+
     msgs = []
     for position in mark_positions.result:
         pos = check_position(position)
