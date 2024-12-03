@@ -1,12 +1,14 @@
 import random
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum
 from io import BytesIO
-from typing import Iterator, Optional, Tuple
+from typing import Optional
 
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
 from PIL.Image import Image as IMG
+from PIL.Image import Resampling
 
 from .utils import load_font, load_skin, save_png
 
@@ -76,7 +78,9 @@ class MineSweeper:
         self.draw_counts(bg)
         self.draw_time(bg)
         self.draw_tiles(bg)
-        bg = bg.resize((bg.width * self.scale, bg.height * self.scale), Image.NEAREST)
+        bg = bg.resize(
+            (bg.width * self.scale, bg.height * self.scale), Resampling.NEAREST
+        )
         self.draw_label(bg)
         return save_png(bg)
 
@@ -213,7 +217,7 @@ class MineSweeper:
         return 0 <= x < self.row and 0 <= y < self.column
 
     @staticmethod
-    def neighbors() -> Tuple[Tuple[int, int], ...]:
+    def neighbors() -> tuple[tuple[int, int], ...]:
         return ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
 
     def count_around(self, x: int, y: int) -> int:

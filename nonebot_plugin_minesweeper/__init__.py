@@ -1,14 +1,13 @@
 import asyncio
 import re
 from asyncio import TimerHandle
-from typing import Dict, Optional, Tuple
+from typing import Annotated, Optional
 
 from nonebot import require
 from nonebot.matcher import Matcher
 from nonebot.plugin import PluginMetadata, inherit_supported_adapters
 from nonebot.rule import to_me
 from nonebot.utils import run_sync
-from typing_extensions import Annotated
 
 require("nonebot_plugin_alconna")
 require("nonebot_plugin_session")
@@ -59,8 +58,8 @@ __plugin_meta__ = PluginMetadata(
 )
 
 
-games: Dict[str, MineSweeper] = {}
-timers: Dict[str, TimerHandle] = {}
+games: dict[str, MineSweeper] = {}
+timers: dict[str, TimerHandle] = {}
 
 
 UserId = Annotated[str, SessionId(SessionIdType.GROUP)]
@@ -204,7 +203,7 @@ async def _(matcher: Matcher, user_id: UserId):
     await matcher.finish("游戏已结束")
 
 
-def check_position(position: str) -> Optional[Tuple[int, int]]:
+def check_position(position: str) -> Optional[tuple[int, int]]:
     match_obj = re.match(r"^([a-z])(\d+)$", position, re.IGNORECASE)
     if match_obj:
         x = (ord(match_obj.group(1).lower()) - ord("a")) % 32
@@ -216,7 +215,7 @@ def check_position(position: str) -> Optional[Tuple[int, int]]:
 async def _(
     matcher: Matcher,
     user_id: UserId,
-    open_positions: Query[Tuple[str, ...]] = AlconnaQuery("open_positions", ()),
+    open_positions: Query[tuple[str, ...]] = AlconnaQuery("open_positions", ()),
 ):
     game = games[user_id]
     set_timeout(matcher, user_id)
@@ -251,7 +250,7 @@ async def _(
 async def _(
     matcher: Matcher,
     user_id: UserId,
-    mark_positions: Query[Tuple[str, ...]] = AlconnaQuery("mark_positions", ()),
+    mark_positions: Query[tuple[str, ...]] = AlconnaQuery("mark_positions", ()),
 ):
     game = games[user_id]
     set_timeout(matcher, user_id)

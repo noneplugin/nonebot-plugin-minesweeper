@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
-from typing import List, Tuple
 
 from PIL import Image, ImageFont
 from PIL.Image import Image as IMG
@@ -17,23 +16,23 @@ skin_list = [f.stem for f in skins_dir.iterdir() if f.suffix == ".bmp"]
 
 @dataclass
 class Skin:
-    numbers: List[IMG]
-    icons: List[IMG]
-    digits: List[IMG]
-    faces: List[IMG]
+    numbers: list[IMG]
+    icons: list[IMG]
+    digits: list[IMG]
+    faces: list[IMG]
     background: IMG
 
 
 def load_skin(row: int, column: int, skin_name: str = "winxp") -> Skin:
     image = Image.open(skins_dir / f"{skin_name}.bmp").convert("RGBA")
 
-    def cut(box: Tuple[int, int, int, int]) -> IMG:
+    def cut(box: tuple[int, int, int, int]) -> IMG:
         return image.crop(box)
 
-    numbers: List[IMG] = [cut((i * 16, 0, i * 16 + 16, 16)) for i in range(9)]
-    icons: List[IMG] = [cut((i * 16, 16, i * 16 + 16, 32)) for i in range(8)]
-    digits: List[IMG] = [cut((i * 12, 33, i * 12 + 11, 54)) for i in range(11)]
-    faces: List[IMG] = [cut((i * 27, 55, i * 27 + 26, 81)) for i in range(5)]
+    numbers: list[IMG] = [cut((i * 16, 0, i * 16 + 16, 16)) for i in range(9)]
+    icons: list[IMG] = [cut((i * 16, 16, i * 16 + 16, 32)) for i in range(8)]
+    digits: list[IMG] = [cut((i * 12, 33, i * 12 + 11, 54)) for i in range(11)]
+    faces: list[IMG] = [cut((i * 27, 55, i * 27 + 26, 81)) for i in range(5)]
     background: IMG
 
     w = column
