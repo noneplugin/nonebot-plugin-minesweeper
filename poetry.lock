@@ -287,19 +287,19 @@ nonebot2 = ">=2.3.0"
 tarina = ">=0.6.3,<0.7"
 
 [[package]]
-name = "nonebot-plugin-session"
-version = "0.3.2"
-description = "Nonebot2 会话信息提取与会话id定义"
+name = "nonebot-plugin-uninfo"
+version = "0.6.1"
+description = "Universal Information Model for Nonebot2"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = ">=3.9"
 files = [
-    {file = "nonebot_plugin_session-0.3.2-py3-none-any.whl", hash = "sha256:785e74ff656e46d84c4dbbac125f9a9adebcc4b9ff7db700527e6e47d47aabd6"},
-    {file = "nonebot_plugin_session-0.3.2.tar.gz", hash = "sha256:da0dabe9108151052a6e83d9923068d2ec43a93810ad37b264ed65aee2c69f93"},
+    {file = "nonebot_plugin_uninfo-0.6.1-py3-none-any.whl", hash = "sha256:c6fef664af82955a50e1fd91040c2f180eaa9ee0fd09aa6cb6b385e11aede590"},
+    {file = "nonebot_plugin_uninfo-0.6.1.tar.gz", hash = "sha256:f5eefa4992ab8a5a2fad9d848f1b2077303d825f61ee237f0131968506c32708"},
 ]
 
 [package.dependencies]
-nonebot2 = ">=2.3.0,<3.0.0"
-strenum = ">=0.4.15,<0.5.0"
+importlib-metadata = ">=4.13.0"
+nonebot2 = ">=2.3.0"
 
 [[package]]
 name = "nonebot-plugin-waiter"
@@ -705,22 +705,6 @@ files = [
 ]
 
 [[package]]
-name = "strenum"
-version = "0.4.15"
-description = "An Enum that inherits from str."
-optional = false
-python-versions = "*"
-files = [
-    {file = "StrEnum-0.4.15-py3-none-any.whl", hash = "sha256:a30cda4af7cc6b5bf52c8055bc4bf4b2b6b14a93b574626da33df53cf7740659"},
-    {file = "StrEnum-0.4.15.tar.gz", hash = "sha256:878fb5ab705442070e4dd1929bb5e2249511c0bcf2b0eeacf3bcd80875c82eff"},
-]
-
-[package.extras]
-docs = ["myst-parser[linkify]", "sphinx", "sphinx-rtd-theme"]
-release = ["twine"]
-test = ["pylint", "pytest", "pytest-black", "pytest-cov", "pytest-pylint"]
-
-[[package]]
 name = "tarina"
 version = "0.6.7"
 description = "A collection of common utils for Arclet"
@@ -996,4 +980,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "8ce199ed0d5306118db966afde0c941cdf3e1fae7ce7e3fe155e8909aab03798"
+content-hash = "5225069fc3c3888f9347406f7afc973a348a7863076acc1b1bfeb737b57864fd"
